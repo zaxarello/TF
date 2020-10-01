@@ -1,0 +1,568 @@
+
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.util.*;
+
+
+public class Solution {
+    public static void main(String[] args) {
+//        ArrayList<Integer>[][] table = new ArrayList[6][4];
+//        for (int i = 0; i < table.length; i++)
+//            for (int j = 0; j <table[i].length; j++)
+//                table[i][j] = new ArrayList<>();
+//        table[0][0].add(0);
+//        table[0][1].add(0);
+//        table[0][1].add(1);
+//        table[0][2].add(0);
+//        table[1][0].add(0);
+//        table[1][3].add(2);
+//        table[2][0].add(0);
+//        table[2][2].add(3);
+//        table[2][3].add(4);
+//        table[3][0].add(0);
+//        table[3][2].add(2);
+//        table[4][0].add(0);
+//        table[4][1].add(5);
+//        table[5][0].add(1);
+//        List<List<Integer>> list = toAStateMachine(table);
+//        System.out.println("Вывод конечного автомата: ");
+//        outList(list);
+        /*List<List<Integer>> list = new ArrayList<>();
+        for (int i = 0 ; i < 6; i++)
+            list.add(new ArrayList<>());
+        list.get(0).add(0);
+        list.get(0).add(1);
+        list.get(0).add(2);
+        list.get(0).add(0);
+        list.get(1).add(0);
+        list.get(1).add(3);
+        list.get(1).add(4);
+        list.get(1).add(1);
+        list.get(2).add(0);
+        list.get(2).add(3);
+        list.get(2).add(5);
+        list.get(2).add(2);
+        list.get(3).add(0);
+        list.get(3).add(3);
+        list.get(3).add(3);
+        list.get(3).add(5);
+        list.get(4).add(1);
+        list.get(4).add(1);
+        list.get(4).add(2);
+        list.get(4).add(5);
+        list.get(5).add(1);
+        list.get(5).add(2);
+        list.get(5).add(1);
+        list.get(5).add(4);
+        System.out.println("Начало:");
+        outList(list);*/
+        List<List<Integer>> result = minimization(inToSecond());
+        System.out.println("Результат:");
+        outList(result);
+    }
+
+
+    private static List<List<Integer>> inToSecond() {
+        BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
+        List<List<Integer>> list = new ArrayList<>();
+        int conditions;
+        int inputSymbols;
+        while (true) {
+            try {
+                System.out.println("Введите количество состояний автомата, не учитывая начальное состояния. Состояние должно быть хотя бы одно");
+                conditions = Integer.parseInt(reader.readLine());
+                if (conditions < 1) {
+                    System.out.println("Должно быть хотя бы одно состояние");
+                    continue;
+                }
+                conditions += 1;
+                break;
+            } catch (Exception e) {
+                System.out.println("Введенное число некорректно");
+            }
+        }
+        for (int i = 0; i < conditions; i++)
+            list.add(new ArrayList<>());
+        while (true) {
+            System.out.println("Введите количество входных значений. Значений должно быть хотя бы два");
+            try {
+                inputSymbols = Integer.parseInt(reader.readLine());
+                if (inputSymbols < 2) {
+                    System.out.println("Должно быть хотя бы два входных значения");
+                    continue;
+                }
+                inputSymbols += 1;
+                break;
+            } catch (Exception e) {
+                System.out.println("Введенное число некорректно");
+            }
+        }
+        boolean finalGo = false;
+        while (!finalGo) {
+            for (int i = 0; i < conditions; i++) {
+                for (int j = 1; j < inputSymbols; j++) {
+                    System.out.println("Вводите переходы для состояния " + i + " и входного значения " + (j - 1) + ". В случае пустого перехода вводите -1");
+                    int transition;
+                    while (true) {
+                        try {
+                            transition = Integer.parseInt(reader.readLine());
+                            if (transition < -1 || transition > conditions - 1) {
+                                System.out.println("Такого состояния для перехода не существует");
+                                continue;
+                            }
+                            break;
+                        } catch (Exception e) {
+                            System.out.println("Введенное значение неккоректно");
+                        }
+                    }
+                    list.get(i).add(transition);
+                }
+                boolean answer;
+                while (true) {
+                    try {
+                        System.out.println("Является ли данное состояние конечным? true/false");
+                        answer = Boolean.parseBoolean(reader.readLine());
+                        break;
+                    } catch (Exception e) {
+                        System.out.println("Отвечать надо true/false");
+                    }
+                }
+                if (answer) {
+                    list.get(i).add(0, 1);
+                    finalGo = true;
+                } else
+                    list.get(i).add(0, 0);
+            }
+            if (!finalGo) {
+                System.out.println("Должно быть хотя бы одно конечное состояние. Теперь начинаем ввод с начала...");
+                list = new ArrayList<>();
+            }
+        }
+        return list;
+    }
+
+    private static List<List<Integer>> minimization(List<List<Integer>> start) {
+        List<List<Integer>> startMap = new ArrayList<>();
+        List<Integer> readyIndexs = new ArrayList<>();
+        for (int i = 0; i < start.size(); i++) {
+            if (!readyIndexs.contains(i)) {
+                readyIndexs.add(i);
+                List<Integer> newList = new ArrayList<>();
+                newList.add(i);
+                startMap.add(newList);
+                for (int j = i + 1; j < start.size(); j++)
+                    if (!readyIndexs.contains(j) && start.get(j).get(0).equals(start.get(i).get(0))) {
+                        newList.add(j);
+                        readyIndexs.add(j);
+                    }
+            }
+        }
+        return recursionMinimization(start, startMap);
+    }
+
+    private static List<List<Integer>> recursionMinimization(List<List<Integer>> table, List<List<Integer>> firstMap) {
+        List<List<Integer>> secondMap = new ArrayList<>();
+        List<Integer> readyIndexs = new ArrayList<>();
+        for (int i = 0; i < table.size(); i++) {
+            if (!readyIndexs.contains(i)) {
+                List<Integer> list = new ArrayList<>();
+                list.add(i);
+                secondMap.add(list);
+                readyIndexs.add(i);
+                if (firstMap.get(findInMap(i, firstMap)).size() == 1) {
+                    continue;
+                }
+                label:
+                for (int j = i + 1; j < table.size(); j++) {
+                    if (!readyIndexs.contains(j)) {
+                        for (int k = 1; k < table.get(j).size(); k++)
+                            if (!findInMap(table.get(i).get(k), firstMap).equals(findInMap(table.get(j).get(k), firstMap)))
+                                continue label;
+                        readyIndexs.add(j);
+                        list.add(j);
+                    }
+                }
+            }
+        }
+        System.out.println("firstMap:");
+        outList(firstMap);
+        System.out.println("secondMap");
+        outList(secondMap);
+        if (!equalsMap(firstMap, secondMap))
+            return recursionMinimization(table, secondMap);
+        else {
+            List<List<Integer>> result = new ArrayList<>();
+            for (int i = 0; i < secondMap.size(); i++) {
+                List<Integer> list = new ArrayList<>();
+                result.add(list);
+                boolean findFinal = false;
+                List<Integer> mainElement = table.get(secondMap.get(i).get(0));
+                for (int j = 1; j < mainElement.size(); j++) {
+                    list.add(findInMap(mainElement.get(j), secondMap));
+                }
+                for (Integer maybeFinal : secondMap.get(i))
+                    if (!findFinal && table.get(maybeFinal).get(0) == 1) {
+                        findFinal = true;
+                        list.add(0, 1);
+                    }
+                if (!findFinal)
+                    list.add(0, 0);
+            }
+            return result;
+        }
+    }
+
+    private static Boolean equalsMap(List<List<Integer>> firstMap, List<List<Integer>> secondMap) {
+        label:
+        for (List<Integer> firstList : firstMap) {
+            for (List<Integer> secondList : secondMap)
+                if (firstList.equals(secondList))
+                    continue label;
+            return false;
+        }
+        return true;
+    }
+
+    private static Integer findInMap(int number, List<List<Integer>> firstMap) {
+        if (number == -1)
+            return -1;
+        for (int i = 0; i < firstMap.size(); i++)
+            if (firstMap.get(i).contains(number))
+                return i;
+        return -1;
+    }
+
+    private static ArrayList<Integer>[][] inToFirst() {
+        BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
+        int conditions;
+        int inputSymbols;
+        while (true) {
+            try {
+                System.out.println("Введите количество состояний автомата, не учитывая начальное состояния. Состояние должно быть хотя бы одно");
+                conditions = Integer.parseInt(reader.readLine());
+                if (conditions < 1) {
+                    System.out.println("Должно быть хотя бы одно состояние");
+                    continue;
+                }
+                conditions += 1;
+                break;
+            } catch (Exception e) {
+                System.out.println("Введенное число некорректно");
+            }
+        }
+        while (true) {
+            System.out.println("Введите количество входных значений, не учитывая пустой переход. Значение должно быть хотя бы одно");
+            try {
+                inputSymbols = Integer.parseInt(reader.readLine());
+                if (inputSymbols < 1) {
+                    System.out.println("Должно быть хотя бы одно входное значение");
+                    continue;
+                }
+                inputSymbols += 2;
+                break;
+            } catch (Exception e) {
+                System.out.println("Введенное число некорректно");
+            }
+        }
+        ArrayList<Integer>[][] table = new ArrayList[conditions][inputSymbols];
+        for (int i = 0; i < conditions; i++) {
+            for (int j = 0; j < inputSymbols; j++)
+                table[i][j] = new ArrayList<>();
+        }
+        boolean finalGo = false;
+        while (!finalGo) {
+            for (int i = 0; i < conditions; i++) {
+                for (int j = 1; j < inputSymbols; j++) {
+                    if (j == inputSymbols - 1)
+                        System.out.println("Вводите переходы для состояния " + i + " и пустого входного значения. В конце введите -1");
+                    else
+                        System.out.println("Вводите переходы для состояния " + i + " и входного значения " + (j - 1) + ". В конце введите -1");
+                    int transition;
+                    while (true) {
+                        try {
+                            transition = Integer.parseInt(reader.readLine());
+                            if (transition < -1 || transition > conditions - 1) {
+                                System.out.println("Такого состояния для перехода не существует");
+                                continue;
+                            }
+                            break;
+                        } catch (Exception e) {
+                            System.out.println("Введенное значение неккоректно");
+                        }
+                    }
+                    while (transition != -1) {
+                        table[i][j].add(transition);
+                        while (true) {
+                            try {
+                                transition = Integer.parseInt(reader.readLine());
+                                if (transition < -1 || transition > conditions - 1)
+                                    continue;
+                                break;
+                            } catch (Exception e) {
+                                System.out.println("Введенное значение неккоректно");
+                            }
+                        }
+                    }
+                    Collections.sort(table[i][j]);
+                }
+                boolean answer;
+                while (true) {
+                    try {
+                        System.out.println("Является ли данное состояние конечным? true/false");
+                        answer = Boolean.parseBoolean(reader.readLine());
+                        break;
+                    } catch (Exception e) {
+                        System.out.println("Отвечать надо true/false");
+                    }
+                }
+                if (answer) {
+                    table[i][0].add(1);
+                    finalGo = true;
+                } else
+                    table[i][0].add(0);
+            }
+            if (!finalGo) {
+                System.out.println("Должно быть хотя бы одно конечное состояние. Теперь начинаем ввод с начала...");
+                table = new ArrayList[conditions][inputSymbols];
+            }
+        }
+        return table;
+    }
+
+    private static void outList(List<List<Integer>> list) {
+        for (int i = 0; i < list.size(); i++) {
+            System.out.print(i + ":   ");
+            for (int j = 0; j < list.get(i).size(); j++)
+                System.out.print(j + ": " + list.get(i).get(j) + "   ");
+            System.out.println();
+        }
+    }
+
+    private static void outList3(List<List<List<Integer>>> list) {
+        for (int i = 0; i < list.size(); i++) {
+            System.out.print(i + ":   ");
+            for (int j = 0; j < list.get(i).size(); j++) {
+                System.out.print(j + ":  ");
+                System.out.print(list.get(i).get(j));
+                System.out.print("   ");
+            }
+            System.out.println();
+        }
+    }
+
+    private static void out47(List<int[]> map1) {
+        for (int i = 0; i < map1.size(); i++)
+            System.out.println(i + ": " + map1.get(i)[0] + " " + map1.get(i)[1]);
+    }
+
+
+    private static List<List<Integer>> toAStateMachine(ArrayList<Integer>[][] table) {
+        List<int[]> map1 = new ArrayList<>();
+        int[] temp = new int[2];
+        temp[0] = -1;
+        temp[1] = -1;
+        map1.add(temp);
+        for (int i = 0; i < table.length; i++) {
+            for (int j = 1; j < table[i].length - 1; j++) {
+                if (table[i][j].size() != 0) {
+                    int[] ints = new int[2];
+                    ints[0] = i;
+                    ints[1] = j;
+                    map1.add(ints);
+                }
+            }
+        }
+        System.out.println("map1:");
+        out47(map1);
+        List<List<Integer>> indexs = new ArrayList<>();
+        for (int i = 0; i < table.length; i++) {
+            List<Integer> list = new ArrayList<>();
+            if (i == 0)
+                list.add(0);
+            for (int j = 1; j < map1.size(); j++) {
+                for (int value : table[map1.get(j)[0]][map1.get(j)[1]])
+                    if (value == i) {
+                        list.add(j);
+                        break;
+                    }
+            }
+            Collections.sort(list);
+            indexs.add(list);
+        }
+        List<Integer> empty = new ArrayList<>();
+        for (ArrayList<Integer>[] aTable : table) {
+            empty.addAll(aTable[aTable.length - 1]);
+        }
+        while (empty.size() != 0) {
+            for (int i = 0; i < table.length; i++) {
+                if (!empty.contains(i))
+                    for (int number : table[i][table[i].length - 1]) {
+                        label:
+                        for (int index1 : indexs.get(i)) {
+                            for (int index2 : indexs.get(number)) {
+                                if (index1 == index2)
+                                    continue label;
+                            }
+                            indexs.get(number).add(index1);
+                        }
+                        empty.remove(new Integer(number));
+                        Collections.sort(indexs.get(number));
+                    }
+            }
+        }
+        System.out.println("Индексы: ");
+        outList(indexs);
+        List<List<List<Integer>>> result = new ArrayList<>();
+        List<List<Integer>> map2 = new ArrayList<>();
+        for (int i = 0; i < indexs.get(0).size(); i++) {
+            List<Integer> list = new ArrayList<>();
+            list.add(indexs.get(0).get(i));
+            map2.add(list);
+        }
+        while (map2.size() != result.size()) {
+            for (int position = result.size(); position < map2.size(); position++) {
+                List<List<Integer>> list = new ArrayList<>();
+                for (int i = 0; i < table[0].length - 1; i++)
+                    list.add(new ArrayList<>());
+                result.add(list);
+                for (int index : map2.get(position)) {
+                    for (int i = 0; i < indexs.size(); i++)
+                        for (int ind2 : indexs.get(i))
+                            if (index == ind2) {
+                                if (result.get(position).get(0).size() == 0) {
+                                    System.out.println("Адрес " + i);
+                                    result.get(position).get(0).add(table[i][0].get(0));
+                                } else if (result.get(position).get(0).get(0) == 0) {
+                                    System.out.println("Адрес " + i);
+                                    result.get(position).get(0).set(0, table[i][0].get(0));
+                                }
+                                label2:
+                                for (int j = 0; j < map1.size(); j++) {
+                                    if (i == map1.get(j)[0]) {
+                                        for (int num2 : result.get(position).get(map1.get(j)[1]))
+                                            if (num2 == j)
+                                                continue label2;
+                                        result.get(position).get(map1.get(j)[1]).add(j);
+                                        Collections.sort(result.get(position).get(map1.get(j)[1]));
+
+                                    }
+                                }
+                            }
+                }
+            }
+            for (List<List<Integer>> list : result) {
+                label5:
+                for (int i = 1; i < list.size(); i++) {
+                    label4:
+                    for (List<Integer> maps : map2) {
+                        label3:
+                        for (int num1 : list.get(i)) {
+                            for (int num2 : maps) {
+                                if (num1 == num2)
+                                    continue label3;
+                            }
+                            continue label4;
+                        }
+                        continue label5;
+                    }
+                    List<Integer> listToAdd = new ArrayList<>();
+                    listToAdd.addAll(list.get(i));
+                    Collections.sort(listToAdd);
+                    map2.add(listToAdd);
+                }
+            }
+        }
+        System.out.println("map2: ");
+        outList(map2);
+        System.out.println("result: ");
+        outList3(result);
+        List<List<Integer>> realResult = new ArrayList<>();
+        for (List<List<Integer>> list : result) { // Замена индексов
+            List<Integer> newList = new ArrayList<>();
+            realResult.add(newList);
+            newList.add(list.get(0).get(0));
+            label23:
+            for (int i = 1; i < list.size(); i++) {
+                if (list.get(i).size() > 0) {
+                    label22:
+                    for (int j = 0; j < map2.size(); j++) {
+                        List<Integer> listToCheck = map2.get(j);
+                        label21:
+                        for (int num1 : list.get(i)) {
+                            for (int num2 : listToCheck) {
+                                if (num1 == num2)
+                                    continue label21;
+                            }
+                            continue label22;
+                        }
+                        newList.add(j);
+                        continue label23;
+                    }
+                } else
+                    newList.add(-1);
+            }
+        }
+        System.out.println("realResult:");
+        outList(realResult);
+        List<List<Integer>> map3 = new ArrayList<>();
+        List<Integer> checkIndexs = new ArrayList<>();
+        for (int i = 0; i < realResult.size(); i++) {
+            if (checkIndexs.contains(i))
+                continue;
+            List<Integer> newList = new ArrayList<>();
+            newList.add(i);
+            checkIndexs.add(i);
+            map3.add(newList);
+            for (int j = i + 1; j < realResult.size(); j++) {
+                if (realResult.get(i).equals(realResult.get(j))) {
+                    newList.add(j);
+                    checkIndexs.add(j);
+                }
+            }
+        }
+        System.out.println("map3:");
+        outList(map3);
+        List<List<Integer>> ultraRealResult = new ArrayList<>();
+        checkIndexs = new ArrayList<>();
+        for (int i = 0; i < realResult.size(); i++) {
+            if (checkIndexs.contains(i))
+                continue;
+            for (List<Integer> list : map3) {
+                for (int num : list)
+                    if (num == i) {
+                        checkIndexs.addAll(list);
+                        List<Integer> ultraRealList = new ArrayList<>();
+                        ultraRealList.add(realResult.get(i).get(0));
+                        for (int j = 1; j < realResult.get(i).size(); j++) {
+                            if (realResult.get(i).get(j) != -1) {
+                                for (int k = 0; k < map3.size(); k++) {
+                                    for (int num3 : map3.get(k))
+                                        if (num3 == realResult.get(i).get(j))
+                                            ultraRealList.add(k);
+                                }
+                            } else
+                                ultraRealList.add(-1);
+                        }
+                        ultraRealResult.add(ultraRealList);
+                    }
+            }
+        }
+        return ultraRealResult;
+    }
+
+    private static void out(ArrayList<Integer>[][] table) {
+        if (table == null)
+            return;
+        for (int i = 0; i < table.length; i++) {
+            System.out.print(i + "  ");
+            for (int j = 0; j < table[i].length; j++) {
+                System.out.print(j + ": ");
+                for (int num : table[i][j])
+                    System.out.print(num + ", ");
+                System.out.print("     ");
+            }
+            System.out.println();
+        }
+    }
+    }
+                
